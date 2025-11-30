@@ -44,7 +44,7 @@ export default function TaskDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="px-5 pt-8 pb-3 border-b ">
+      <View className="px-5 pt-8 pb-3 border-b">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#000" />
