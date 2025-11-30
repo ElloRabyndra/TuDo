@@ -51,7 +51,7 @@ export default function TasksScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-pink-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="pt-4 pb-3">
         <View className="flex-row items-center justify-between px-5 mb-4 border-b border-black-200">
@@ -153,17 +153,17 @@ export default function TasksScreen() {
         onRequestClose={() => setShowDeleteModal(false)}
       >
         <View className="items-center justify-center flex-1 px-8 bg-black/30">
-          <View className="w-full p-6 bg-white rounded-xl">
+          <View className="w-full p-6 bg-white border border-black rounded-xl">
             <Text className="mb-2 text-lg font-semibold text-center">
               Delete Task
             </Text>
             <Text className="mb-6 text-center text-gray-600">
-              Are you sure you want to delete "Task 1"?
+              Are you sure you want to delete this task?
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={confirmDelete}
-                className="flex-1 py-3 bg-pink-500 rounded-full"
+                className="flex-1 py-3 bg-pink-500 border border-black rounded-2xl"
               >
                 <Text className="font-semibold text-center text-white">
                   Yes, Delete Task
@@ -171,7 +171,7 @@ export default function TasksScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 bg-gray-200 rounded-full"
+                className="flex-1 py-3 bg-gray-200 border border-black rounded-2xl"
               >
                 <Text className="font-semibold text-center text-gray-800">
                   No, Cancel
