@@ -9,11 +9,11 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   const getColors = () => {
     switch (status) {
       case "Pending":
-        return "bg-yellow-100 border-yellow-400";
+        return "bg-yellow-400";
       case "On going":
-        return "bg-blue-100 border-blue-400";
+        return "bg-blue-400";
       case "Done":
-        return "bg-green-100 border-green-400";
+        return "bg-green-400";
     }
   };
 
@@ -30,9 +30,10 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <View
-      className={`px-3 py-1 rounded-full ${getColors()} flex-row items-center`}
+      className={`px-5 py-2 rounded-full border flex-row items-center gap-1`}
     >
-      <Text className={`text-xs font-medium ${getTextColor()}`}>{status}</Text>
+      <View className={`w-3 h-3 rounded-full ${getColors()}`} />
+      <Text className={`text-sm ${getTextColor()} font-medium`}>{status}</Text>
     </View>
   );
 }

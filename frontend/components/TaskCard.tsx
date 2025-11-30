@@ -37,7 +37,9 @@ export default function TaskCard({
   return (
     <View className="mb-3 overflow-hidden bg-white border border-black rounded-xl">
       {/* Header */}
-      <View className={`flex-row items-center justify-between p-4 ${getColors()}`}>
+      <View
+        className={`flex-row items-center justify-between border-b border-black p-4 ${getColors()}`}
+      >
         <View className="flex-row items-center flex-1">
           <TouchableOpacity onPress={onToggleExpand} className="mr-2">
             <Ionicons
@@ -96,8 +98,8 @@ export default function TaskCard({
           activeOpacity={1}
           onPress={() => setShowMenu(false)}
         >
-          <View className="items-center justify-center flex-1 px-8">
-            <View className="w-full overflow-hidden bg-white rounded-xl">
+          <View className="items-center justify-center flex-1 px-8 border border-black">
+            <View className="w-48 overflow-hidden bg-white rounded-xl">
               <TouchableOpacity
                 className="p-4 border-b border-gray-200"
                 onPress={() => {

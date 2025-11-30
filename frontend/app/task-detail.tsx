@@ -44,7 +44,7 @@ export default function TaskDetailScreen() {
   return (
     <SafeAreaView className="flex-1 bg-pink-50">
       {/* Header */}
-      <View className="px-5 pt-4 pb-3">
+      <View className="px-5 pt-8 pb-3">
         <View className="flex-row items-center justify-between">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#000" />
@@ -56,23 +56,23 @@ export default function TaskDetailScreen() {
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Task Header */}
-        <View className="p-5 mb-4 bg-white shadow-sm rounded-xl">
+        <View className="mb-4 rounded-xl bg-pink-50">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="flex-1 text-xl font-bold">{task.title}</Text>
+            <Text className="flex-1 text-3xl font-bold">{task.title}</Text>
             <TouchableOpacity onPress={() => setShowMenu(true)}>
               <Ionicons name="ellipsis-vertical" size={24} color="#000" />
             </TouchableOpacity>
           </View>
 
-          <Text className="mb-4 text-xs text-gray-400">
+          <Text className="mb-4 text-sm text-gray-400">
             created 2025/03/12 at 05.00 AM
           </Text>
 
           {/* Badges */}
           <View className="flex-row gap-2 mb-3">
             {task.label && (
-              <View className="px-3 py-1 bg-green-300 rounded-full">
-                <Text className="text-sm font-medium">{task.label}</Text>
+              <View className="px-10 py-2 border border-black rounded-r-full bg-lime-300">
+                <Text className="text-sm font-medium ">{task.label}</Text>
               </View>
             )}
             <StatusBadge status={task.status} />
@@ -80,18 +80,17 @@ export default function TaskDetailScreen() {
           </View>
 
           {/* Deadline */}
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-lg font-semibold">Deadline</Text>
+          </View>
           {isOverdue && (
-            <View
-              className={`px-4 py-2 rounded-full ${
-                task.status === "Done" ? "bg-green-100" : "bg-red-500"
-              }`}
-            >
+            <View className={`w-32 py-2 px-4 rounded-full border `}>
               <Text
-                className={`text-center text-sm font-medium ${
-                  task.status === "Done" ? "text-green-700" : "text-white"
+                className={`text-sm text-center font-medium ${
+                  task.status === "Done" ? "text-green-700" : "text-red-500"
                 }`}
               >
-                {task.status === "Done" ? "Completed" : `Od 16hr 20m 39s`}
+                {task.status === "Done" ? "Completed" : task.deadlineDate}
               </Text>
             </View>
           )}
@@ -127,8 +126,8 @@ export default function TaskDetailScreen() {
           activeOpacity={1}
           onPress={() => setShowMenu(false)}
         >
-          <View className="items-center justify-center flex-1 px-8">
-            <View className="w-full overflow-hidden bg-white rounded-xl">
+          <View className="items-center justify-center flex-1 px-8 border border-black">
+            <View className="w-48 overflow-hidden bg-white rounded-xl">
               <TouchableOpacity
                 className="p-4 border-b border-gray-200"
                 onPress={handleDelete}
@@ -157,17 +156,18 @@ export default function TaskDetailScreen() {
         onRequestClose={() => setShowDeleteModal(false)}
       >
         <View className="items-center justify-center flex-1 px-8 bg-black/30">
-          <View className="w-full p-6 bg-white rounded-xl">
+          <View className="w-full p-6 bg-white border border-black rounded-xl">
             <Text className="mb-2 text-lg font-semibold text-center">
               Delete Task
             </Text>
             <Text className="mb-6 text-center text-gray-600">
-              Are you sure you want to delete "{task.title}"?
+              Are you sure you want to delete "
+              <Text className="font-bold">{task.title}</Text>"?
             </Text>
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={confirmDelete}
-                className="flex-1 py-3 bg-pink-500 rounded-full"
+                className="flex-1 py-3 bg-pink-500 border border-black rounded-2xl"
               >
                 <Text className="font-semibold text-center text-white">
                   Yes, Delete Task
@@ -175,7 +175,7 @@ export default function TaskDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 bg-gray-200 rounded-full"
+                className="flex-1 py-3 bg-gray-200 border border-black rounded-2xl"
               >
                 <Text className="font-semibold text-center text-gray-800">
                   No, Cancel
