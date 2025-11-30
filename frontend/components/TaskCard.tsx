@@ -38,7 +38,7 @@ export default function TaskCard({
     <View className="mb-3 overflow-hidden bg-white border border-black rounded-xl">
       {/* Header */}
       <View
-        className={`flex-row items-center justify-between border-b border-black p-4 ${getColors()}`}
+        className={`flex-row items-center justify-between border-b  border-black p-4 ${getColors()}`}
       >
         <View className="flex-row items-center flex-1">
           <TouchableOpacity onPress={onToggleExpand} className="mr-2">
@@ -71,7 +71,7 @@ export default function TaskCard({
 
       {/* Sub Tasks */}
       {task.isExpanded && (
-        <View className="p-4 bg-pink-50">
+        <View className="p-4 ">
           {task.subTasks.map((subTask) => (
             <SubTaskItem key={subTask.id} subTask={subTask} readonly />
           ))}

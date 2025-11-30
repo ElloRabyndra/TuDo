@@ -19,7 +19,7 @@ export default function TaskDetailScreen() {
 
   if (!task) {
     return (
-      <SafeAreaView className="items-center justify-center flex-1 bg-pink-50">
+      <SafeAreaView className="items-center justify-center flex-1 bg-gray-50">
         <Text>Task not found</Text>
       </SafeAreaView>
     );
@@ -42,10 +42,10 @@ export default function TaskDetailScreen() {
     : null;
 
   return (
-    <SafeAreaView className="flex-1 bg-pink-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="px-5 pt-8 pb-3">
-        <View className="flex-row items-center justify-between">
+      <View className="px-5 pt-8 pb-3 border-b ">
+        <View className="flex-row items-center gap-3">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={28} color="#000" />
           </TouchableOpacity>
@@ -54,9 +54,9 @@ export default function TaskDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
         {/* Task Header */}
-        <View className="mb-4 rounded-xl bg-pink-50">
+        <View className="mb-4 rounded-xl bg-gray-50">
           <View className="flex-row items-center justify-between mb-3">
             <Text className="flex-1 text-3xl font-bold">{task.title}</Text>
             <TouchableOpacity onPress={() => setShowMenu(true)}>

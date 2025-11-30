@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   Image,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -13,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTasks } from "@/hooks/useTasks";
 import { Priority } from "@/constants/types";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function AddTaskScreen() {
   const router = useRouter();
@@ -22,8 +24,12 @@ export default function AddTaskScreen() {
   const [priority, setPriority] = useState<Priority>("High");
   const [label, setLabel] = useState("");
   const [subTasks, setSubTasks] = useState<string[]>(["", "", ""]);
-  const [deadlineDate, setDeadlineDate] = useState("");
-  const [deadlineTime, setDeadlineTime] = useState("");
+
+  // State untuk date dan time
+  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
+  const [deadlineTime, setDeadlineTime] = useState<Date | undefined>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const handleAddSubTask = () => {
     setSubTasks([...subTasks, ""]);
@@ -33,6 +39,42 @@ export default function AddTaskScreen() {
     const updated = [...subTasks];
     updated[index] = value;
     setSubTasks(updated);
+  };
+
+  // Handler untuk date picker
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === "ios"); // Di iOS, picker tetap tampil
+    if (selectedDate) {
+      setDeadlineDate(selectedDate);
+    }
+  };
+
+  // Handler untuk time picker
+  const onTimeChange = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(Platform.OS === "ios");
+    if (selectedTime) {
+      setDeadlineTime(selectedTime);
+    }
+  };
+
+  // Format date untuk ditampilkan
+  const formatDate = (date: Date | undefined) => {
+    if (!date) return "";
+    return date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Format time untuk ditampilkan
+  const formatTime = (time: Date | undefined) => {
+    if (!time) return "";
+    return time.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   };
 
   const handleSave = () => {
@@ -46,15 +88,15 @@ export default function AddTaskScreen() {
       priority,
       label,
       subTasks: subTasks.filter((st) => st.trim() !== ""),
-      deadlineDate: deadlineDate || undefined,
-      deadlineTime: deadlineTime || undefined,
+      deadlineDate: deadlineDate ? formatDate(deadlineDate) : undefined,
+      deadlineTime: deadlineTime ? formatTime(deadlineTime) : undefined,
     });
 
     router.back();
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-pink-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 pt-6" showsVerticalScrollIndicator={false}>
         <View className="px-5">
           <View className="flex-row items-center p-8 pl-0">
@@ -64,6 +106,7 @@ export default function AddTaskScreen() {
             </TouchableOpacity>
             <Text className="ml-24 text-2xl font-bold">Add New Task</Text>
           </View>
+
           {/* Parent Task Name */}
           <TextInput
             placeholder="Parent task name"
@@ -71,22 +114,24 @@ export default function AddTaskScreen() {
             onChangeText={setTitle}
             className="px-4 py-3 mb-4 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
           />
+
           {/* Priority Dropdown */}
           <View className="flex-row items-center justify-between px-4 py-3 mb-4 border border-gray-300 rounded-2xl focus:border-black">
             <Text className={title ? "text-gray-800" : "text-gray-400"}>
               {priority || "Priority"}
             </Text>
           </View>
+
           {/* Priority Options */}
           <View className="flex-row gap-2 mb-4">
             <TouchableOpacity
               onPress={() => setPriority("High")}
-              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "High" ? "border bg-red-500 border-red-700" : "bg-gray-200"}`}
+              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "High" ? "border bg-red-500 border-red-700" : "border border-gray-400"}`}
             >
               <Feather
                 name="alert-triangle"
                 size={12}
-                color={priority === "High" ? "white" : "tgray"}
+                color={priority === "High" ? "white" : "gray"}
               />
               <Text
                 className={priority === "High" ? "text-white" : "text-gray-800"}
@@ -96,7 +141,7 @@ export default function AddTaskScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setPriority("Mid")}
-              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "Mid" ? "border bg-orange-400 border-orange-500" : "bg-gray-200"}`}
+              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "Mid" ? "border bg-orange-400 border-orange-500" : "border border-gray-400"}`}
             >
               <Feather
                 name="alert-triangle"
@@ -111,14 +156,13 @@ export default function AddTaskScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setPriority("Low")}
-              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "Low" ? "border bg-green-500 border-green-700" : "bg-gray-200"}`}
+              className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${priority === "Low" ? "border bg-green-500 border-green-700" : "border border-gray-400"}`}
             >
               <Feather
                 name="alert-triangle"
                 size={12}
                 color={priority === "Low" ? "white" : "gray"}
               />
-
               <Text
                 className={priority === "Low" ? "text-white" : "text-gray-800"}
               >
@@ -126,6 +170,7 @@ export default function AddTaskScreen() {
               </Text>
             </TouchableOpacity>
           </View>
+
           {/* Label */}
           <TextInput
             placeholder="Label"
@@ -133,30 +178,30 @@ export default function AddTaskScreen() {
             onChangeText={setLabel}
             className="px-4 py-3 mb-4 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
           />
+
           {/* Sub Task Section */}
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-lg font-semibold">Sub Task</Text>
-
             <TouchableOpacity
               onPress={handleAddSubTask}
               className="relative flex-row items-center h-10"
             >
               <View
-                className="flex-row items-center justify-center h-10 pl-12 pr-4 bg-white border border-gray-300"
+                className="flex-row items-center justify-center h-10 pl-12 pr-4 bg-white border border-black"
                 style={{
                   borderRadius: 9999,
                 }}
               >
                 <Text className="font-medium text-black">Add Sub Task</Text>
               </View>
-
-              <View className="absolute top-0 left-0 flex-row items-center justify-center w-10 h-10 bg-pink-500 border border-gray-300 rounded-full">
+              <View className="absolute top-0 left-0 flex-row items-center justify-center w-10 h-10 bg-pink-500 border border-black rounded-full">
                 <Text className="text-xl font-medium text-white -mt-0.5">
                   +
                 </Text>
               </View>
             </TouchableOpacity>
           </View>
+
           {subTasks.map((subTask, index) => (
             <TextInput
               key={index}
@@ -166,23 +211,58 @@ export default function AddTaskScreen() {
               className="px-4 py-3 mb-3 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
             />
           ))}
+
           {/* Deadline Date */}
           <Text className="mb-3 text-lg font-semibold">Deadline Date</Text>
           <View className="flex-row gap-3 mb-6">
-            <TextInput
-              placeholder="Date"
-              value={deadlineDate}
-              onChangeText={setDeadlineDate}
-              className="flex-1 px-4 py-3 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
-            />
-            <TextInput
-              placeholder="Time"
-              value={deadlineTime}
-              onChangeText={setDeadlineTime}
-              className="flex-1 px-4 py-3 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
-            />
+            {/* Date Picker */}
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-2xl"
+            >
+              <Text
+                className={deadlineDate ? "text-gray-800" : "text-gray-400"}
+              >
+                {deadlineDate ? formatDate(deadlineDate) : "Date"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Time Picker */}
+            <TouchableOpacity
+              onPress={() => setShowTimePicker(true)}
+              className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-2xl"
+            >
+              <Text
+                className={deadlineTime ? "text-gray-800" : "text-gray-400"}
+              >
+                {deadlineTime ? formatTime(deadlineTime) : "Time"}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Date Picker Modal */}
+          {showDatePicker && (
+            <DateTimePicker
+              value={deadlineDate || new Date()}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onDateChange}
+              minimumDate={new Date()}
+            />
+          )}
+
+          {/* Time Picker Modal */}
+          {showTimePicker && (
+            <DateTimePicker
+              value={deadlineTime || new Date()}
+              mode="time"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={onTimeChange}
+              is24Hour={true}
+            />
+          )}
         </View>
+
         {/* Save Button */}
         <View className="px-5 pt-8 pb-6 mt-12 mb-12 border-t">
           <TouchableOpacity

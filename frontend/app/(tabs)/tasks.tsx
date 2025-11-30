@@ -51,7 +51,7 @@ export default function TasksScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-pink-50">
+    <SafeAreaView className="flex-1 bg-gray-50">
       {/* Header */}
       <View className="pt-4 pb-3">
         <View className="flex-row items-center justify-between px-5 mb-4 border-b border-black-200">
