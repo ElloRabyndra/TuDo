@@ -3,28 +3,23 @@ import { Task, TaskFormData, Status, SubTask } from "@/constants/types";
 import api from "@/services/api";
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Status | "Pending">("Pending");
   const [sortByAlphabet, setSortByAlphabet] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = useCallback(
-    async (status: Status | "Pending" = filter) => {
-      setLoading(true);
-      try {
-        const response = await api.get<Task[]>("/parenttasks", {
-          params: { status },
-        });
-        console.log("Fetched tasks:", response.data);
-        setTasks(response.data);
-      } catch (error) {
-        console.error("Failed to fetch tasks", error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [filter]
-  );
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.get<Task[]>("/parenttasks");
+      console.log("Fetched all tasks:", response.data);
+      setAllTasks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tasks", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchTasks();
@@ -32,20 +27,10 @@ export function useTasks() {
 
   const addTask = async (data: TaskFormData) => {
     try {
-      const payload: any = {
-        title: data.title,
-        priority: data.priority,
-        label: data.label,
-        status: "Pending",
-        deadline_date: data.deadlineDate,
-        deadline_time: data.deadlineTime,
-      };
-
       let finalDeadlineTime = data.deadlineTime;
       if (data.deadlineDate && data.deadlineTime) {
         const datePart = new Date(data.deadlineDate);
         const timePart = new Date(data.deadlineTime);
-        // Combine date from deadlineDate and time from deadlineTime
         datePart.setHours(
           timePart.getHours(),
           timePart.getMinutes(),
@@ -54,7 +39,7 @@ export function useTasks() {
         finalDeadlineTime = datePart.toISOString();
       }
 
-      const response = await api.post("/parenttasks", {
+      await api.post("/parenttasks", {
         title: data.title,
         priority: data.priority,
         label: data.label,
@@ -79,7 +64,6 @@ export function useTasks() {
       if (data.priority) payload.priority = data.priority;
       if (data.label) payload.label = data.label;
 
-      // Perbaiki format tanggal
       if (data.deadlineDate) {
         const date = new Date(data.deadlineDate);
         if (!isNaN(date.getTime())) {
@@ -87,7 +71,6 @@ export function useTasks() {
         }
       }
 
-      // Perbaiki format waktu
       if (data.deadlineTime) {
         const time = new Date(data.deadlineTime);
         if (!isNaN(time.getTime())) {
@@ -105,14 +88,14 @@ export function useTasks() {
   const deleteTask = async (id: string) => {
     try {
       await api.delete(`/parenttasks/${id}`);
-      setTasks(tasks.filter((task) => task.id !== id));
+      setAllTasks(allTasks.filter((task) => task.id !== id));
     } catch (error) {
       console.error("Error deleting task", error);
     }
   };
 
   const toggleSubTask = async (taskId: string, subTaskId: string) => {
-    const task = tasks.find((t) => t.id === taskId);
+    const task = allTasks.find((t) => t.id === taskId);
     if (!task) return;
     const subTask = task.subTasks?.find((s) => s.id === subTaskId);
     if (!subTask) return;
@@ -123,7 +106,7 @@ export function useTasks() {
         completed: updatedStatus,
       });
 
-      setTasks((prevTasks) =>
+      setAllTasks((prevTasks) =>
         prevTasks.map((t) => {
           if (t.id !== taskId) return t;
 
@@ -153,8 +136,8 @@ export function useTasks() {
   };
 
   const toggleExpanded = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
+    setAllTasks(
+      allTasks.map((task) =>
         task.id === id ? { ...task, isExpanded: !task.isExpanded } : task
       )
     );
@@ -163,8 +146,8 @@ export function useTasks() {
   const getFilteredTasks = () => {
     let filtered =
       filter === "Pending"
-        ? tasks
-        : tasks.filter((task) => task.status === filter);
+        ? allTasks.filter((task) => task.status === "Pending")
+        : allTasks.filter((task) => task.status === filter);
 
     if (sortByAlphabet) {
       return [...filtered].sort((a, b) => a.title.localeCompare(b.title));
@@ -179,8 +162,8 @@ export function useTasks() {
   };
 
   return {
-    tasks: getFilteredTasks(),
-    allTasks: tasks,
+    tasks: getFilteredTasks(), 
+    allTasks, 
     filter,
     setFilter,
     sortByAlphabet,

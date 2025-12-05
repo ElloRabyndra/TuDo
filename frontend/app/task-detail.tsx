@@ -154,7 +154,7 @@ export default function TaskDetailScreen() {
             <Text className="text-lg font-semibold">Deadline</Text>
           </View>
           {isOverdue && (
-            <View className={`w-32 py-2 px-4 rounded-full border `}>
+            <View className={`max-w-40 py-2 px-4 rounded-full border `}>
               <Text
                 className={`text-sm text-center font-medium ${task.status === "Done" ? "text-green-700" : "text-red-500"
                   }`}
