@@ -8,20 +8,23 @@ export function useTasks() {
   const [sortByAlphabet, setSortByAlphabet] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchTasks = useCallback(async (status: Status | "Pending" = filter) => {
-    setLoading(true);
-    try {
-      const response = await api.get<Task[]>("/parenttasks", {
-        params: { status },
-      });
-      console.log('Fetched tasks:', response.data);
-      setTasks(response.data);
-    } catch (error) {
-      console.error("Failed to fetch tasks", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+  const fetchTasks = useCallback(
+    async (status: Status | "Pending" = filter) => {
+      setLoading(true);
+      try {
+        const response = await api.get<Task[]>("/parenttasks", {
+          params: { status },
+        });
+        console.log("Fetched tasks:", response.data);
+        setTasks(response.data);
+      } catch (error) {
+        console.error("Failed to fetch tasks", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filter]
+  );
 
   useEffect(() => {
     fetchTasks();
@@ -43,7 +46,11 @@ export function useTasks() {
         const datePart = new Date(data.deadlineDate);
         const timePart = new Date(data.deadlineTime);
         // Combine date from deadlineDate and time from deadlineTime
-        datePart.setHours(timePart.getHours(), timePart.getMinutes(), timePart.getSeconds());
+        datePart.setHours(
+          timePart.getHours(),
+          timePart.getMinutes(),
+          timePart.getSeconds()
+        );
         finalDeadlineTime = datePart.toISOString();
       }
 
@@ -52,9 +59,11 @@ export function useTasks() {
         priority: data.priority,
         label: data.label,
         status: "Pending",
-        deadlineDate: data.deadlineDate ? new Date(data.deadlineDate).toISOString() : null,
+        deadlineDate: data.deadlineDate
+          ? new Date(data.deadlineDate).toISOString()
+          : null,
         deadlineTime: finalDeadlineTime,
-        subTasks: data.subTasks.map(t => ({ title: t, completed: false }))
+        subTasks: data.subTasks.map((t) => ({ title: t, completed: false })),
       });
 
       fetchTasks();
@@ -69,11 +78,24 @@ export function useTasks() {
       if (data.title) payload.title = data.title;
       if (data.priority) payload.priority = data.priority;
       if (data.label) payload.label = data.label;
-      if (data.deadlineDate) payload.deadlineDate = new Date(data.deadlineDate).toISOString();
-      if (data.deadlineTime) payload.deadlineTime = data.deadlineTime;
+
+      // Perbaiki format tanggal
+      if (data.deadlineDate) {
+        const date = new Date(data.deadlineDate);
+        if (!isNaN(date.getTime())) {
+          payload.deadlineDate = date.toISOString();
+        }
+      }
+
+      // Perbaiki format waktu
+      if (data.deadlineTime) {
+        const time = new Date(data.deadlineTime);
+        if (!isNaN(time.getTime())) {
+          payload.deadlineTime = time.toISOString();
+        }
+      }
 
       await api.put(`/parenttasks/${id}`, payload);
-
       fetchTasks();
     } catch (error) {
       console.error("Error updating task", error);
@@ -90,37 +112,41 @@ export function useTasks() {
   };
 
   const toggleSubTask = async (taskId: string, subTaskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
+    const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
-    const subTask = task.subTasks?.find(s => s.id === subTaskId);
+    const subTask = task.subTasks?.find((s) => s.id === subTaskId);
     if (!subTask) return;
 
     try {
       const updatedStatus = !subTask.completed;
       await api.put(`/subtasks/${subTaskId}`, {
-        completed: updatedStatus
+        completed: updatedStatus,
       });
 
-      setTasks(prevTasks => prevTasks.map(t => {
-        if (t.id !== taskId) return t;
+      setTasks((prevTasks) =>
+        prevTasks.map((t) => {
+          if (t.id !== taskId) return t;
 
-        const updatedSubTasks = t.subTasks.map(st => {
-          if (st.id === subTaskId) return { ...st, completed: updatedStatus };
-          return st;
-        });
+          const updatedSubTasks = t.subTasks.map((st) => {
+            if (st.id === subTaskId) return { ...st, completed: updatedStatus };
+            return st;
+          });
 
-        const total = updatedSubTasks.length;
-        const completedCount = updatedSubTasks.filter(st => st.completed).length;
-        let newStatus: Status | "Pending" = "Pending";
+          const total = updatedSubTasks.length;
+          const completedCount = updatedSubTasks.filter(
+            (st) => st.completed
+          ).length;
+          let newStatus: Status | "Pending" = "Pending";
 
-        if (total > 0 && completedCount === total) {
-          newStatus = "Done";
-        } else if (completedCount > 0) {
-          newStatus = "On going";
-        }
+          if (total > 0 && completedCount === total) {
+            newStatus = "Done";
+          } else if (completedCount > 0) {
+            newStatus = "On going";
+          }
 
-        return { ...t, subTasks: updatedSubTasks, status: newStatus };
-      }));
+          return { ...t, subTasks: updatedSubTasks, status: newStatus };
+        })
+      );
     } catch (error) {
       console.error("Error toggling subtask", error);
     }
@@ -145,13 +171,11 @@ export function useTasks() {
     }
 
     const priorityOrder = { High: 0, Mid: 1, Low: 2 };
-    return [...filtered].sort(
-      (a, b) => {
-        const pA = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 99;
-        const pB = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 99;
-        return pA - pB;
-      }
-    );
+    return [...filtered].sort((a, b) => {
+      const pA = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 99;
+      const pB = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 99;
+      return pA - pB;
+    });
   };
 
   return {
@@ -167,6 +191,6 @@ export function useTasks() {
     toggleSubTask,
     toggleExpanded,
     loading,
-    refresh: fetchTasks
+    refresh: fetchTasks,
   };
 }

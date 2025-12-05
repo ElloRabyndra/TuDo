@@ -39,16 +39,20 @@ export default function EditTaskScreen() {
       setLabel(task.label);
       setSubTasks(task.subTasks.map((st) => st.title));
 
+      // parsing deadline date
       if (task.deadlineDate) {
-        const dateStr = task.deadlineDate;
-        setDeadlineDate(new Date(dateStr));
+        const date = new Date(task.deadlineDate);
+        if (!isNaN(date.getTime())) {
+          setDeadlineDate(date);
+        }
       }
 
+      // parsing deadline time
       if (task.deadlineTime) {
-        const [hours, minutes] = task.deadlineTime.split(":");
-        const time = new Date();
-        time.setHours(parseInt(hours), parseInt(minutes));
-        setDeadlineTime(time);
+        const time = new Date(task.deadlineTime);
+        if (!isNaN(time.getTime())) {
+          setDeadlineTime(time);
+        }
       }
     }
   }, [task]);
@@ -77,21 +81,27 @@ export default function EditTaskScreen() {
     }
   };
 
-
-
   const handleSave = () => {
     if (!title.trim()) {
       alert("Please enter a task name");
       return;
     }
 
+    // Format tanggal 
+    const formattedDeadlineDate = deadlineDate
+      ? deadlineDate.toISOString()
+      : undefined;
+    const formattedDeadlineTime = deadlineTime
+      ? deadlineTime.toISOString()
+      : undefined;
+
     updateTask(id as string, {
       title,
       priority,
       label,
       subTasks: subTasks.filter((st) => st.trim() !== ""),
-      deadlineDate: deadlineDate ? formatDate(deadlineDate) : undefined,
-      deadlineTime: deadlineTime ? formatTime(deadlineTime) : undefined,
+      deadlineDate: formattedDeadlineDate,
+      deadlineTime: formattedDeadlineTime,
     });
 
     router.back();
