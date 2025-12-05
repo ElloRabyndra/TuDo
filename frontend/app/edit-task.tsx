@@ -14,6 +14,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
 import { useTasks } from "@/hooks/useTasks";
 import { Priority } from "@/constants/types";
+import { formatDate, formatTime } from "@/lib/utils";
 
 export default function EditTaskScreen() {
   const router = useRouter();
@@ -38,13 +39,11 @@ export default function EditTaskScreen() {
       setLabel(task.label);
       setSubTasks(task.subTasks.map((st) => st.title));
 
-      // Parse existing date
       if (task.deadlineDate) {
         const dateStr = task.deadlineDate;
         setDeadlineDate(new Date(dateStr));
       }
 
-      // Parse existing time
       if (task.deadlineTime) {
         const [hours, minutes] = task.deadlineTime.split(":");
         const time = new Date();
@@ -64,7 +63,6 @@ export default function EditTaskScreen() {
     setSubTasks(updated);
   };
 
-  // Handler untuk date picker
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === "ios");
     if (selectedDate) {
@@ -72,7 +70,6 @@ export default function EditTaskScreen() {
     }
   };
 
-  // Handler untuk time picker
   const onTimeChange = (event: any, selectedTime?: Date) => {
     setShowTimePicker(Platform.OS === "ios");
     if (selectedTime) {
@@ -80,25 +77,7 @@ export default function EditTaskScreen() {
     }
   };
 
-  // Format date untuk ditampilkan
-  const formatDate = (date: Date | undefined) => {
-    if (!date) return "";
-    return date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
 
-  // Format time untuk ditampilkan
-  const formatTime = (time: Date | undefined) => {
-    if (!time) return "";
-    return time.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
 
   const handleSave = () => {
     if (!title.trim()) {

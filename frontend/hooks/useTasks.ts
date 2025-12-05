@@ -1,135 +1,129 @@
-import { useState } from "react";
-import { Task, TaskFormData, Status } from "@/constants/types";
-
-// Dummy data
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "Task Parent 1",
-    priority: "High",
-    label: "Kerja",
-    status: "Pending",
-    createdAt: new Date().toISOString(),
-    subTasks: [
-      {
-        id: "1-1",
-        title: "Hi I am subtask 1, my papa is taskparent 1",
-        completed: false,
-      },
-      {
-        id: "1-2",
-        title: "Hi I am subtask 2, my mama is taskparent 1. I'm from italy",
-        completed: false,
-      },
-    ],
-    deadlineDate: "2025/03/12",
-    deadlineTime: "12:30 PM",
-  },
-  {
-    id: "2",
-    title: "Task Parent 2",
-    priority: "Low",
-    label: "Daily",
-    status: "On going",
-    createdAt: new Date().toISOString(),
-    subTasks: [
-      {
-        id: "2-1",
-        title: "Hi I am subtask 1, my papa is taskparent 2",
-        completed: false,
-      },
-    ],
-  },
-  {
-    id: "3",
-    title: "Task Parent 3",
-    priority: "Mid",
-    label: "",
-    status: "Pending",
-    createdAt: new Date().toISOString(),
-    subTasks: [
-      {
-        id: "3-1",
-        title: "Hi I am subtask 1, my papa is taskparent 1",
-        completed: false,
-      },
-    ],
-  },
-];
+import { useState, useEffect, useCallback } from "react";
+import { Task, TaskFormData, Status, SubTask } from "@/constants/types";
+import api from "@/services/api";
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [filter, setFilter] = useState<Status | "Pending">("Pending");
   const [sortByAlphabet, setSortByAlphabet] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const addTask = (data: TaskFormData) => {
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: data.title,
-      priority: data.priority,
-      label: data.label,
-      status: "Pending",
-      subTasks: data.subTasks.map((title, index) => ({
-        id: `${Date.now()}-${index}`,
-        title,
-        completed: false,
-      })),
-      deadlineDate: data.deadlineDate,
-      deadlineTime: data.deadlineTime,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks([newTask, ...tasks]);
+  const fetchTasks = useCallback(async (status: Status | "Pending" = filter) => {
+    setLoading(true);
+    try {
+      const response = await api.get<Task[]>("/parenttasks", {
+        params: { status },
+      });
+      console.log('Fetched tasks:', response.data);
+      setTasks(response.data);
+    } catch (error) {
+      console.error("Failed to fetch tasks", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  const addTask = async (data: TaskFormData) => {
+    try {
+      const payload: any = {
+        title: data.title,
+        priority: data.priority,
+        label: data.label,
+        status: "Pending",
+        deadline_date: data.deadlineDate,
+        deadline_time: data.deadlineTime,
+      };
+
+      let finalDeadlineTime = data.deadlineTime;
+      if (data.deadlineDate && data.deadlineTime) {
+        const datePart = new Date(data.deadlineDate);
+        const timePart = new Date(data.deadlineTime);
+        // Combine date from deadlineDate and time from deadlineTime
+        datePart.setHours(timePart.getHours(), timePart.getMinutes(), timePart.getSeconds());
+        finalDeadlineTime = datePart.toISOString();
+      }
+
+      const response = await api.post("/parenttasks", {
+        title: data.title,
+        priority: data.priority,
+        label: data.label,
+        status: "Pending",
+        deadlineDate: data.deadlineDate ? new Date(data.deadlineDate).toISOString() : null,
+        deadlineTime: finalDeadlineTime,
+        subTasks: data.subTasks.map(t => ({ title: t, completed: false }))
+      });
+
+      fetchTasks();
+    } catch (error) {
+      console.error("Failed to add task", error);
+    }
   };
 
-  const updateTask = (id: string, data: Partial<TaskFormData>) => {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === id) {
-          return {
-            ...task,
-            title: data.title || task.title,
-            priority: data.priority || task.priority,
-            label: data.label !== undefined ? data.label : task.label,
-            subTasks: data.subTasks
-              ? data.subTasks.map((title, index) => ({
-                  id: task.subTasks[index]?.id || `${Date.now()}-${index}`,
-                  title,
-                  completed: task.subTasks[index]?.completed || false,
-                }))
-              : task.subTasks,
-            deadlineDate:
-              data.deadlineDate !== undefined
-                ? data.deadlineDate
-                : task.deadlineDate,
-            deadlineTime:
-              data.deadlineTime !== undefined
-                ? data.deadlineTime
-                : task.deadlineTime,
-          };
+  const updateTask = async (id: string, data: Partial<TaskFormData>) => {
+    try {
+      const payload: any = {};
+      if (data.title) payload.title = data.title;
+      if (data.priority) payload.priority = data.priority;
+      if (data.label) payload.label = data.label;
+      if (data.deadlineDate) payload.deadlineDate = new Date(data.deadlineDate).toISOString();
+      if (data.deadlineTime) payload.deadlineTime = data.deadlineTime;
+
+      await api.put(`/parenttasks/${id}`, payload);
+
+      fetchTasks();
+    } catch (error) {
+      console.error("Error updating task", error);
+    }
+  };
+
+  const deleteTask = async (id: string) => {
+    try {
+      await api.delete(`/parenttasks/${id}`);
+      setTasks(tasks.filter((task) => task.id !== id));
+    } catch (error) {
+      console.error("Error deleting task", error);
+    }
+  };
+
+  const toggleSubTask = async (taskId: string, subTaskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    const subTask = task.subTasks?.find(s => s.id === subTaskId);
+    if (!subTask) return;
+
+    try {
+      const updatedStatus = !subTask.completed;
+      await api.put(`/subtasks/${subTaskId}`, {
+        completed: updatedStatus
+      });
+
+      setTasks(prevTasks => prevTasks.map(t => {
+        if (t.id !== taskId) return t;
+
+        const updatedSubTasks = t.subTasks.map(st => {
+          if (st.id === subTaskId) return { ...st, completed: updatedStatus };
+          return st;
+        });
+
+        const total = updatedSubTasks.length;
+        const completedCount = updatedSubTasks.filter(st => st.completed).length;
+        let newStatus: Status | "Pending" = "Pending";
+
+        if (total > 0 && completedCount === total) {
+          newStatus = "Done";
+        } else if (completedCount > 0) {
+          newStatus = "On going";
         }
-        return task;
-      })
-    );
-  };
 
-  const deleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
-  };
-
-  const toggleSubTask = (taskId: string, subTaskId: string) => {
-    setTasks(
-      tasks.map((task) => {
-        if (task.id === taskId) {
-          return {
-            ...task,
-            subTasks: task.subTasks.map((st) =>
-              st.id === subTaskId ? { ...st, completed: !st.completed } : st
-            ),
-          };
-        }
-        return task;
-      })
-    );
+        return { ...t, subTasks: updatedSubTasks, status: newStatus };
+      }));
+    } catch (error) {
+      console.error("Error toggling subtask", error);
+    }
   };
 
   const toggleExpanded = (id: string) => {
@@ -150,10 +144,13 @@ export function useTasks() {
       return [...filtered].sort((a, b) => a.title.localeCompare(b.title));
     }
 
-    // Sort by priority: High > Mid > Low
     const priorityOrder = { High: 0, Mid: 1, Low: 2 };
     return [...filtered].sort(
-      (a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]
+      (a, b) => {
+        const pA = priorityOrder[a.priority as keyof typeof priorityOrder] ?? 99;
+        const pB = priorityOrder[b.priority as keyof typeof priorityOrder] ?? 99;
+        return pA - pB;
+      }
     );
   };
 
@@ -169,5 +166,7 @@ export function useTasks() {
     deleteTask,
     toggleSubTask,
     toggleExpanded,
+    loading,
+    refresh: fetchTasks
   };
 }

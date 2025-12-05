@@ -6,15 +6,16 @@ import {
   ScrollView,
   Modal,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useTasks } from "@/hooks/useTasks";
 import TaskCard from "@/components/TaskCard";
 import EmptyState from "@/components/EmptyState";
 import FilterButton from "@/components/FilterButton";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Status } from "@/constants/types";
 
 export default function TasksScreen() {
@@ -27,15 +28,25 @@ export default function TasksScreen() {
     setSortByAlphabet,
     toggleExpanded,
     deleteTask,
+    loading,
+    refresh,
   } = useTasks();
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
-  const filteredTasks = tasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const tasksToDisplay = searchQuery
+    ? tasks.filter((task) =>
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : tasks;
 
   const handleDelete = (taskId: string) => {
     setTaskToDelete(taskId);
@@ -111,14 +122,18 @@ export default function TasksScreen() {
         </View>
       </View>
       {/* Task List */}
-      {filteredTasks.length === 0 ? (
+      {loading ? (
+        <View className="items-center justify-center flex-1">
+          <ActivityIndicator size="large" color="#000" />
+        </View>
+      ) : tasksToDisplay.length === 0 ? (
         <EmptyState />
       ) : (
         <ScrollView
           className="flex-1 px-5"
           showsVerticalScrollIndicator={false}
         >
-          {filteredTasks.map((task) => (
+          {tasksToDisplay.map((task) => (
             <TaskCard
               key={task.id}
               task={task}

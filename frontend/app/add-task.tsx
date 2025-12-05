@@ -88,8 +88,8 @@ export default function AddTaskScreen() {
       priority,
       label,
       subTasks: subTasks.filter((st) => st.trim() !== ""),
-      deadlineDate: deadlineDate ? formatDate(deadlineDate) : undefined,
-      deadlineTime: deadlineTime ? formatTime(deadlineTime) : undefined,
+      deadlineDate: deadlineDate ? deadlineDate.toISOString() : undefined,
+      deadlineTime: deadlineTime ? deadlineTime.toISOString() : undefined,
     });
 
     router.back();

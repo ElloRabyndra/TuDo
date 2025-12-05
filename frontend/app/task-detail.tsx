@@ -1,21 +1,93 @@
-import { View, Text, TouchableOpacity, ScrollView, Modal } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useTasks } from "@/hooks/useTasks";
 import PriorityBadge from "@/components/PriorityBadge";
 import StatusBadge from "@/components/StatusBadge";
 import SubTaskItem from "@/components/SubTaskItem";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { formatDate } from "@/lib/utils";
+import { Task, Status } from "@/constants/types";
+import api from "@/services/api";
 
 export default function TaskDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { allTasks, toggleSubTask, deleteTask } = useTasks();
+  const { deleteTask } = useTasks();
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const task = allTasks.find((t) => t.id === id);
+  const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchTask = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<Task>(`/parenttasks/${id}`);
+      setTask(response.data);
+    } catch (error) {
+      console.error("Failed to fetch task", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchTask();
+    }, [fetchTask])
+  );
+
+  const handleToggleSubTask = async (subTaskId: string) => {
+    if (!task) return;
+    const subTask = task.subTasks.find((s) => s.id === subTaskId);
+    if (!subTask) return;
+
+    // Optimistic update
+    const updatedStatus = !subTask.completed;
+
+    setTask((prev) => {
+      if (!prev) return null;
+      const updatedSubTasks = prev.subTasks.map((st) =>
+        st.id === subTaskId ? { ...st, completed: updatedStatus } : st
+      );
+
+      // Recalculate parent status logic (local)
+      const total = updatedSubTasks.length;
+      const completedCount = updatedSubTasks.filter((st) => st.completed).length;
+      let newStatus: Status = "Pending";
+      if (total > 0 && completedCount === total) {
+        newStatus = "Done";
+      } else if (completedCount > 0) {
+        newStatus = "On going";
+      }
+
+      return {
+        ...prev,
+        subTasks: updatedSubTasks,
+        status: newStatus
+      };
+    });
+
+    try {
+      await api.put(`/subtasks/${subTaskId}`, { completed: updatedStatus });
+      // We could re-fetch here to be safe, but optimistic is nicer.
+      // fetchTask(); 
+    } catch (error) {
+      console.error("Error toggling subtask", error);
+      // Revert on error could go here
+      fetchTask();
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="items-center justify-center flex-1 bg-gray-50">
+        <ActivityIndicator size="large" color="#000" />
+      </SafeAreaView>
+    );
+  }
 
   if (!task) {
     return (
@@ -30,16 +102,14 @@ export default function TaskDetailScreen() {
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    deleteTask(task.id);
+  const confirmDelete = async () => {
+    await deleteTask(task.id);
     setShowDeleteModal(false);
     router.back();
   };
 
   const isOverdue = task.deadlineDate && task.deadlineTime;
-  const deadlineText = isOverdue
-    ? `${task.deadlineDate?.split("/")[2] ?? ""}h ${task.deadlineTime?.split(" ")[0] ?? ""}m`
-    : null;
+
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -65,7 +135,7 @@ export default function TaskDetailScreen() {
           </View>
 
           <Text className="mb-4 text-sm text-gray-400">
-            created 2025/03/12 at 05.00 AM
+            Dibuat {formatDate(task.createdAt)}
           </Text>
 
           {/* Badges */}
@@ -86,11 +156,12 @@ export default function TaskDetailScreen() {
           {isOverdue && (
             <View className={`w-32 py-2 px-4 rounded-full border `}>
               <Text
-                className={`text-sm text-center font-medium ${
-                  task.status === "Done" ? "text-green-700" : "text-red-500"
-                }`}
+                className={`text-sm text-center font-medium ${task.status === "Done" ? "text-green-700" : "text-red-500"
+                  }`}
               >
-                {task.status === "Done" ? "Completed" : task.deadlineDate}
+                {task.status === "Done"
+                  ? "Completed"
+                  : formatDate(task.deadlineDate!)}
               </Text>
             </View>
           )}
@@ -106,7 +177,7 @@ export default function TaskDetailScreen() {
             <SubTaskItem
               key={subTask.id}
               subTask={subTask}
-              onToggle={() => toggleSubTask(task.id, subTask.id)}
+              onToggle={() => handleToggleSubTask(subTask.id)}
             />
           ))}
         </View>

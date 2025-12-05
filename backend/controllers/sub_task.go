@@ -38,6 +38,30 @@ func UpdateSubTask(c *fiber.Ctx) error {
 	}
 
 	database.DB.Save(&sub)
+
+	// Calculate and update parent task status
+	var subTasks []models.SubTask
+	database.DB.Where("parent_id = ?", sub.ParentID).Find(&subTasks)
+
+	total := len(subTasks)
+	completed := 0
+	for _, s := range subTasks {
+		if s.Completed {
+			completed++
+		}
+	}
+
+	var newStatus string
+	if total > 0 && completed == total {
+		newStatus = "Done"
+	} else if completed > 0 {
+		newStatus = "On going"
+	} else {
+		newStatus = "Pending"
+	}
+
+	database.DB.Model(&models.ParentTask{}).Where("id = ?", sub.ParentID).Update("status", newStatus)
+
 	return c.JSON(sub)
 }
 

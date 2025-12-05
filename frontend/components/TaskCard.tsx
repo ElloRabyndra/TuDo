@@ -21,7 +21,9 @@ export default function TaskCard({
   const router = useRouter();
 
   const isOverdue =
-    task.deadlineDate && task.deadlineTime && task.status !== "Done";
+    task.deadlineTime &&
+    task.status !== "Done" &&
+    new Date(task.deadlineTime) < new Date();
 
   const getColors = () => {
     switch (task.priority) {
@@ -79,8 +81,7 @@ export default function TaskCard({
           {/* Deadline warning */}
           {isOverdue && (
             <Text className="mt-2 text-xs text-red-500">
-              Hi I am subtask 2, my mama is taskparent 1. I'm from italy' is due
-              in 2 days
+              Deadline is overdue, please check it!
             </Text>
           )}
         </View>

@@ -11,8 +11,15 @@ import (
 )
 
 func GetParentTasks(c *fiber.Ctx) error {
+	status := c.Query("status")
 	var tasks []models.ParentTask
-	database.DB.Preload("SubTasks").Find(&tasks)
+
+	query := database.DB.Preload("SubTasks")
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	query.Find(&tasks)
 	return c.JSON(tasks)
 }
 
@@ -36,6 +43,11 @@ func CreateParentTask(c *fiber.Ctx) error {
 
 	body.ID = uuid.NewString()
 	body.CreatedAt = time.Now()
+
+	for i := range body.SubTasks {
+		body.SubTasks[i].ID = uuid.NewString()
+		body.SubTasks[i].ParentID = body.ID
+	}
 
 	database.DB.Create(&body)
 	return c.JSON(body)
