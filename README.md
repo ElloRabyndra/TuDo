@@ -2,6 +2,15 @@
 
 TuDo is a powerful and intuitive task management application designed to help you organize your daily activities efficiently. Built as a final project for our Mobile Development course, it combines a sleek React Native frontend with a robust Go backend.
 
+## Development Team
+
+This project was collaboratively built by a passionate and dedicated team:
+
+- **Muhammad Suheil Ichma Putra** – UI/UX Designer
+- **M. Rabyndra Janitra Binello** – Front-End Developer
+- **Monica Amrina Rosyada** – UI/UX Designer & Front-End Developer
+- **Zildjian Vito Sulaiman** – Back-End Developer
+
 ## Features
 
 - **Smart Task Management**: Create parent tasks with multiple subtasks.
@@ -16,12 +25,14 @@ TuDo is a powerful and intuitive task management application designed to help yo
 ## Tech Stack
 
 ### Frontend
+
 - **Framework**: React Native (Expo)
 - **Language**: TypeScript
 - **Styling**: NativeWind (Tailwind CSS)
 - **Navigation**: Expo Router
 
 ### Backend
+
 - **Language**: Go (Golang)
 - **Framework**: Fiber
 - **Database**: SQLite with GORM
