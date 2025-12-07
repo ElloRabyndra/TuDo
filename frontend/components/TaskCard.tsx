@@ -20,10 +20,28 @@ export default function TaskCard({
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
 
-  const isOverdue =
-    task.deadlineTime &&
-    task.status !== "Done" &&
-    new Date(task.deadlineTime) < new Date();
+  // Perbaikan logic isOverdue
+  const isOverdue = (() => {
+    if (task.status === "Done") return false;
+    if (!task.deadlineDate) return false;
+
+    // Gabungkan deadlineDate dan deadlineTime
+    const deadlineDateTime = new Date(task.deadlineDate);
+
+    if (task.deadlineTime) {
+      const timeDate = new Date(task.deadlineTime);
+      deadlineDateTime.setHours(
+        timeDate.getHours(),
+        timeDate.getMinutes(),
+        timeDate.getSeconds()
+      );
+    } else {
+      // Jika tidak ada time, set ke akhir hari (23:59:59)
+      deadlineDateTime.setHours(23, 59, 59);
+    }
+
+    return deadlineDateTime < new Date();
+  })();
 
   const getColors = () => {
     switch (task.priority) {
@@ -40,7 +58,7 @@ export default function TaskCard({
     <View className="mb-3 overflow-hidden bg-white border border-black rounded-xl">
       {/* Header */}
       <View
-        className={`flex-row items-center justify-between border-b  border-black p-4 ${getColors()}`}
+        className={`flex-row items-center justify-between border-b border-black p-4 ${getColors()}`}
       >
         <View className="flex-row items-center flex-1">
           <TouchableOpacity onPress={onToggleExpand} className="mr-2">
@@ -73,7 +91,7 @@ export default function TaskCard({
 
       {/* Sub Tasks */}
       {task.isExpanded && (
-        <View className="p-4 ">
+        <View className="p-4">
           {task.subTasks.map((subTask) => (
             <SubTaskItem key={subTask.id} subTask={subTask} readonly />
           ))}

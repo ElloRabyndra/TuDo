@@ -13,20 +13,26 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
 import { useTasks } from "@/hooks/useTasks";
-import { Priority } from "@/constants/types";
+import { Priority, SubTask } from "@/constants/types";
 import { formatDate, formatTime } from "@/lib/utils";
+import api from "@/services/api";
 
 export default function EditTaskScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { allTasks, updateTask } = useTasks();
+  const { allTasks } = useTasks();
 
   const task = allTasks.find((t) => t.id === id);
 
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState<Priority>("High");
   const [label, setLabel] = useState("");
-  const [subTasks, setSubTasks] = useState<string[]>([]);
+
+  // Ubah state subtasks untuk menyimpan objek lengkap dengan ID
+  const [subTasks, setSubTasks] = useState<
+    Array<{ id?: string; title: string; isNew?: boolean }>
+  >([]);
+
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [deadlineTime, setDeadlineTime] = useState<Date | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -37,7 +43,15 @@ export default function EditTaskScreen() {
       setTitle(task.title);
       setPriority(task.priority);
       setLabel(task.label);
-      setSubTasks(task.subTasks.map((st) => st.title));
+
+      // Simpan subtask dengan ID-nya
+      setSubTasks(
+        task.subTasks.map((st) => ({
+          id: st.id,
+          title: st.title,
+          isNew: false,
+        }))
+      );
 
       // parsing deadline date
       if (task.deadlineDate) {
@@ -58,12 +72,12 @@ export default function EditTaskScreen() {
   }, [task]);
 
   const handleAddSubTask = () => {
-    setSubTasks([...subTasks, ""]);
+    setSubTasks([...subTasks, { title: "", isNew: true }]);
   };
 
   const updateSubTask = (index: number, value: string) => {
     const updated = [...subTasks];
-    updated[index] = value;
+    updated[index].title = value;
     setSubTasks(updated);
   };
 
@@ -81,30 +95,53 @@ export default function EditTaskScreen() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       alert("Please enter a task name");
       return;
     }
 
-    // Format tanggal 
-    const formattedDeadlineDate = deadlineDate
-      ? deadlineDate.toISOString()
-      : undefined;
-    const formattedDeadlineTime = deadlineTime
-      ? deadlineTime.toISOString()
-      : undefined;
+    try {
+      // 1. Update parent task
+      const formattedDeadlineDate = deadlineDate
+        ? deadlineDate.toISOString()
+        : undefined;
+      const formattedDeadlineTime = deadlineTime
+        ? deadlineTime.toISOString()
+        : undefined;
 
-    updateTask(id as string, {
-      title,
-      priority,
-      label,
-      subTasks: subTasks.filter((st) => st.trim() !== ""),
-      deadlineDate: formattedDeadlineDate,
-      deadlineTime: formattedDeadlineTime,
-    });
+      await api.put(`/parenttasks/${id}`, {
+        title,
+        priority,
+        label,
+        deadlineDate: formattedDeadlineDate,
+        deadlineTime: formattedDeadlineTime,
+      });
 
-    router.back();
+      // 2. Proses subtasks yang ada (update jika ada perubahan)
+      for (const st of subTasks) {
+        if (st.title.trim() === "") continue; // Skip subtask kosong
+
+        if (st.isNew) {
+          // Buat subtask baru
+          await api.post("/subtasks", {
+            parentId: id,
+            title: st.title,
+            completed: false,
+          });
+        } else if (st.id) {
+          // Update subtask yang sudah ada (jika diperlukan)
+          await api.put(`/subtasks/${st.id}`, {
+            title: st.title,
+          });
+        }
+      }
+
+      router.back();
+    } catch (error) {
+      console.error("Error saving task:", error);
+      alert("Failed to save task");
+    }
   };
 
   if (!task) {
@@ -120,7 +157,6 @@ export default function EditTaskScreen() {
       <ScrollView className="flex-1 pt-6" showsVerticalScrollIndicator={false}>
         <View className="px-5">
           <View className="flex-row items-center p-8 pl-0">
-            {/* Back Button */}
             <TouchableOpacity onPress={() => router.back()} className="">
               <Ionicons name="chevron-back" size={28} color="#000" />
             </TouchableOpacity>
@@ -222,8 +258,9 @@ export default function EditTaskScreen() {
           {subTasks.map((subTask, index) => (
             <TextInput
               key={index}
-              value={subTask}
+              value={subTask.title}
               onChangeText={(text) => updateSubTask(index, text)}
+              placeholder="Subtask name"
               className="px-4 py-3 mb-3 text-base border-2 border-gray-300 rounded-lg focus:border-black"
             />
           ))}
@@ -231,7 +268,6 @@ export default function EditTaskScreen() {
           {/* Deadline Date */}
           <Text className="mb-3 text-lg font-semibold">Deadline Date</Text>
           <View className="flex-row gap-3 mb-6">
-            {/* Date Picker */}
             <TouchableOpacity
               onPress={() => setShowDatePicker(true)}
               className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg"
@@ -243,7 +279,6 @@ export default function EditTaskScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Time Picker */}
             <TouchableOpacity
               onPress={() => setShowTimePicker(true)}
               className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg"
@@ -256,7 +291,6 @@ export default function EditTaskScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Date Picker Modal */}
           {showDatePicker && (
             <DateTimePicker
               value={deadlineDate || new Date()}
@@ -267,7 +301,6 @@ export default function EditTaskScreen() {
             />
           )}
 
-          {/* Time Picker Modal */}
           {showTimePicker && (
             <DateTimePicker
               value={deadlineTime || new Date()}

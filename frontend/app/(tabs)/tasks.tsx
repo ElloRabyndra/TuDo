@@ -44,8 +44,8 @@ export default function TasksScreen() {
 
   const tasksToDisplay = searchQuery
     ? tasks.filter((task) =>
-      task.title?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+        task.title?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : tasks;
 
   const handleDelete = (taskId: string) => {
@@ -147,7 +147,7 @@ export default function TasksScreen() {
       {/* Add Button */}
       <View className="absolute left-0 right-0 items-center bottom-8">
         {/* Tambahkan View ini sebagai wadah untuk border */}
-        <View className="flex-row items-center justify-center w-full border-t border-black ">
+        <View className="flex-row items-center justify-center w-full border-t border-black bg-gray-50">
           <TouchableOpacity
             onPress={() => router.push("/add-task" as any)}
             className="items-center justify-center w-16 h-16 rounded-full shadow-lg"

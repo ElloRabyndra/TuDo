@@ -205,7 +205,7 @@ export default function AddTaskScreen() {
           {subTasks.map((subTask, index) => (
             <TextInput
               key={index}
-              placeholder="Parent task name"
+              placeholder="Sub task name"
               value={subTask}
               onChangeText={(text) => updateSubTask(index, text)}
               className="px-4 py-3 mb-3 text-base border-2 border-gray-300 rounded-2xl focus:border-black"
